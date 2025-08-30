@@ -1,1 +1,42 @@
 @import "tailwindcss";
+
+/* Heatmap Legend Styling from Agent 1 */
+.heatmap-legend {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.heatmap-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+/* Map Container */
+.map-container {
+  z-index: 1;
+}
+
+/* Severity color classes for popup titles */
+.severity-critical { color: #8B0000; }
+.severity-very-high { color: #FF0000; }
+.severity-high { color: #FF4500; }
+.severity-medium-high { color: #FF8C00; }
+.severity-medium { color: #FFA500; }
+.severity-low-medium { color: #FFD700; }
+.severity-low { color: #FFFF00; }
+.severity-very-low { color: #32CD32; }
+
+/* Background colors for legend dots - Enhanced Agent 1 color scheme */
+.bg-severity-10 { background-color: #8B0000; }
+.bg-severity-8 { background-color: #FF0000; }
+.bg-severity-6 { background-color: #FF8C00; }
+.bg-severity-4 { background-color: #FFD700; }
+.bg-severity-2 { background-color: #32CD32; }
