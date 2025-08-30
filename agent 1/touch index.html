@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent 1: WasteWise Map & Heatmap</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            overflow-y: auto;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.1);
+        }
+
+        .sidebar h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .map-container {
+            position: relative;
+            background: white;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: #d63031;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .hotspot-list {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .hotspot-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid;
+            background: #f8f9fa;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .hotspot-item:hover {
+            transform: translateX(5px);
+        }
+
+        .hotspot-critical { border-left-color: #ff6b6b; }
+        .hotspot-high { border-left-color: #fd79a8; }
+        .hotspot-medium { border-left-color: #fdcb6e; }
+        .hotspot-low { border-left-color: #00b894; }
+
+        .hotspot-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .hotspot-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .loading-overlay.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00b894;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .sidebar {
+                height: auto;
+                max-height: 40vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>🗺️ Map Controls</h1>
+            
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalHotspots">12</div>
+                    <div class="stat-label">Active Hotspots</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="criticalCount">3</div>
+                    <div class="stat-label">Critical Areas</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <div class="control-group">
+                    <label class="control-label">🎯 Map Views</label>
+                    <button class="btn" onclick="showHeatmap()" style="background: linear-gradient(135deg, #ff4757, #c44569); font-size: 1.1em; padding: 15px 20px;">🔥 SHOW HEATMAP</button>
+                    <button class="btn btn-secondary" onclick="showPins()">📍 Show Pins</button>
+                    <button class="btn btn-danger" onclick="showCriticalOnly()">🚨 Critical Only</button>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">⚡ Quick Actions</label>
+                    <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+                    <button class="btn btn-secondary" onclick="simulateNewHotspot()">➕ Simulate New Hotspot</button>
+                    <button class="btn" onclick="centerOnNairobi()">🎯 Center on Nairobi</button>
+                    <button class="btn" onclick="testHeatmap()" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24);">🧪 Test Heatmap</button>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <h3 style="margin-bottom: 15px; color: #333;">🎨 Severity Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff4757;"></div>
+                    <span>Critical (90-100%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6348;"></div>
+                    <span>High (70-89%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffa502;"></div>
+                    <span>Medium (50-69%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2ed573;"></div>
+                    <span>Low (0-49%)</span>
+                </div>
+            </div>
+
+            <!-- Top Hotspots -->
+            <div class="hotspot-list">
+                <h3 style="margin-bottom: 15px; color: #333;">🔥 Top Hotspots</h3>
+                <div id="hotspotsList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-container">
+            <div id="map"></div>
+            
+            <!-- Map Overlay Info -->
+            <div class="map-overlay">
+                <div style="font-weight: bold; margin-bottom: 10px;">📊 Live Status</div>
+                <div>🕒 Last Updated: <span id="lastUpdate">Just now</span></div>
+                <div>🗺️ View: <span id="currentView">Heatmap</span></div>
+                <div>📍 Hotspots: <span id="visibleHotspots">12 visible</span></div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div style="font-weight: bold; color: #333;">🤖 AI Processing Waste Data...</div>
+                <div style="color: #666; margin-top: 10px;">Analyzing hotspot patterns</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <!-- Leaflet Heatmap Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+
+    <script>
+        // Mock waste hotspot data for Nairobi
+        const wasteHotspots = [
+            { lat: -1.2921, lng: 36.8219, severity: 95, location: "CBD Market Area", reports: 45, type: "Market Waste" },
+            { lat: -1.3028, lng: 36.8007, severity: 87, location: "University Way", reports: 38, type: "Street Litter" },
+            { lat: -1.2833, lng: 36.8167, severity: 92, location: "Westlands Mall", reports: 52, type: "Commercial" },
+            { lat: -1.2745, lng: 36.8062, severity: 76, location: "Kilimani Residential", reports: 28, type: "Household" },
+            { lat: -1.3167, lng: 36.8833, severity: 68, location: "Eastleigh Market", reports: 31, type: "Market Waste" },
+            { lat: -1.2500, lng: 36.7833, severity: 84, location: "Karen Shopping", reports: 22, type: "Commercial" },
+            { lat: -1.3333, lng: 36.9167, severity: 58, location: "Pipeline Estate", reports: 19, type: "Household" },
+            { lat: -1.2667, lng: 36.8000, severity: 73, location: "Lavington", reports: 25, type: "Mixed" },
+            { lat: -1.3083, lng: 36.8167, severity: 89, location: "River Road", reports: 41, type: "Street Litter" },
+            { lat: -1.2917, lng: 36.8611, severity: 65, location: "South B", reports: 24, type: "Household" },
+            { lat: -1.2458, lng: 36.7917, severity: 78, location: "Langata Road", reports: 29, type: "Mixed" },
+            { lat: -1.3194, lng: 36.8500, severity: 81, location: "Eastlands", reports: 35, type: "Market Waste" }
+        ];
+
+        // Initialize map
+        let map = L.map('map').setView([-1.2921, 36.8219], 12);
+        let heatmapLayer, pinLayer;
+        let currentView = 'heatmap';
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Initialize the map display
+        function initializeMap() {
+            showLoading("Setting up map visualization...");
+            
+            // Show heatmap immediately
+            showHeatmap();
+            
+            setTimeout(() => {
+                updateHotspotsList();
+                updateStats();
+                hideLoading();
+                
+                // Ensure heatmap is visible
+                if (heatmapLayer) {
+                    map.addLayer(heatmapLayer);
+                    console.log('Heatmap layer added to map');
+                }
+            }, 1000);
+        }
+
+        // Show heatmap visualization
+        function showHeatmap() {
+            clearLayers();
+            
+            // Prepare heatmap data with intensity based on severity
+            const heatmapData = wasteHotspots.map(hotspot => [
+                hotspot.lat,
+                hotspot.lng,
+                hotspot.severity / 100 // Normalize to 0-1
+            ]);
+
+            console.log('Creating heatmap with data:', heatmapData); // Debug log
+
+            try {
+                // Create heatmap layer with enhanced configuration for better visibility
+                heatmapLayer = L.heatLayer(heatmapData, {
+                    radius: 50,           // Increased radius for better visibility
+                    blur: 35,             // Increased blur for smoother appearance
+                    maxZoom: 18,
+                    minOpacity: 0.5,      // Increased minimum opacity
+                    maxIntensity: 1.0,
+                    gradient: {
+                        0.0: '#00ff00',    // Bright green for low severity
+                        0.2: '#ffff00',    // Bright yellow for low-medium
+                        0.4: '#ffa500',    // Orange for medium
+                        0.6: '#ff4500',    // Red-orange for high
+                        0.8: '#ff0000',    // Bright red for very high
+                        1.0: '#8b0000'     // Dark red for critical
+                    }
+                }).addTo(map);
+
+                console.log('Heatmap layer created:', heatmapLayer); // Debug log
+
+                currentView = 'heatmap';
+                document.getElementById('currentView').textContent = 'Heatmap';
+                document.getElementById('visibleHotspots').textContent = `${wasteHotspots.length} visible`;
+                
+                // Add popup functionality for heatmap
+                addHeatmapPopups();
+                
+                // Force a map refresh to ensure heatmap is visible
+                map.invalidateSize();
+                
+                showNotification("🔥 Heatmap displayed! Red areas need urgent attention.");
+                
+            } catch (error) {
+                console.error('Error creating heatmap:', error);
+                showNotification("⚠️ Heatmap error. Trying alternative method...");
+                
+                // Fallback: create simple colored circles
+                createFallbackHeatmap(heatmapData);
+            }
+        }
+
+        // Fallback heatmap using colored circles
+        function createFallbackHeatmap(heatmapData) {
+            heatmapLayer = L.layerGroup();
+            
+            heatmapData.forEach(([lat, lng, intensity]) => {
+                const color = getHeatmapColor(intensity);
+                const radius = Math.max(20, intensity * 100);
+                
+                L.circle([lat, lng], {
+                    radius: radius,
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    weight: 2
+                }).addTo(heatmapLayer);
+            });
+            
+            heatmapLayer.addTo(map);
+            currentView = 'heatmap';
+            document.getElementById('currentView').textContent = 'Heatmap (Fallback)';
+            showNotification("🔥 Fallback heatmap created using colored circles!");
+        }
+
+        // Helper function to get color based on intensity
+        function getHeatmapColor(intensity) {
+            if (intensity >= 0.8) return '#8b0000';      // Dark red
+            if (intensity >= 0.6) return '#ff0000';      // Bright red
+            if (intensity >= 0.4) return '#ff4500';      // Red-orange
+            if (intensity >= 0.2) return '#ffa500';      // Orange
+            if (intensity >= 0.1) return '#ffff00';      // Yellow
+            return '#00ff00';                            // Green
+        }
+
+        // Show pin markers
+        function showPins() {
+            clearLayers();
+            
+            pinLayer = L.layerGroup();
+            
+            wasteHotspots.forEach(hotspot => {
+                const color = getSeverityColor(hotspot.severity);
+                const icon = createCustomIcon(color, hotspot.severity);
+                
+                const marker = L.marker([hotspot.lat, hotspot.lng], { icon })
+                    .bindPopup(createPopupContent(hotspot))
+                    .addTo(pinLayer);
+            });
+            
+            pinLayer.addTo(map);
+            currentView = 'pins';
+            document.getElementById('currentView').textContent = 'Pin Markers';
+            document.getElementById('visibleHotspots').textContent = `${wasteHotspots.length} visible`;
+        }
+
+        // Show only critical hotspots
+        function showCriticalOnly() {
+            clearLayers();
+            
+            const criticalHotspots = wasteHotspots.filter(h => h.severity >= 85);
+            pinLayer = L.layerGroup();
+            
+            criticalHotspots.forEach(hotspot => {
+                const icon = createCustomIcon('#ff4757', hotspot.severity);
+                
+                const marker = L.marker([hotspot.lat, hotspot.lng], { icon })
+                    .bindPopup(createCriticalPopupContent(hotspot))
+                    .addTo(pinLayer);
+                    
+                // Add pulsing animation
+                marker.getElement().style.animation = 'pulse 2s infinite';
+            });
+            
+            pinLayer.addTo(map);
+            currentView = 'critical';
+            document.getElementById('currentView').textContent = 'Critical Only';
+            document.getElementById('visibleHotspots').textContent = `${criticalHotspots.length} critical`;
+        }
+
+        // Helper functions
+        function getSeverityColor(severity) {
+            if (severity >= 90) return '#ff4757';
+            if (severity >= 70) return '#ff6348';
+            if (severity >= 50) return '#ffa502';
+            return '#2ed573';
+        }
+
+        function createCustomIcon(color, severity) {
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <div style="
+                        background: ${color};
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-weight: bold;
+                        font-size: 12px;
+                        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+                        border: 3px solid white;
+                    ">
+                        ${Math.round(severity)}
+                    </div>
+                `,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+        }
+
+        function createPopupContent(hotspot) {
+            return `
+                <div style="text-align: center; min-width: 200px;">
+                    <h3 style="color: ${getSeverityColor(hotspot.severity)}; margin-bottom: 10px;">
+                        🗑️ ${hotspot.location}
+                    </h3>
+                    <div style="margin: 10px 0;">
+                        <strong>Severity:</strong> ${Math.round(hotspot.severity)}%<br>
+                        <strong>Reports:</strong> ${hotspot.reports}<br>
+                        <strong>Type:</strong> ${hotspot.type}
+                    </div>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px;">
+                        <strong>🌍 Climate Impact:</strong><br>
+                        Clearing this reduces ${(hotspot.reports * 0.1).toFixed(1)}kg CO₂
+                    </div>
+                </div>
+            `;
+        }
+
+        function createCriticalPopupContent(hotspot) {
+            return `
+                <div style="text-align: center; min-width: 200px;">
+                    <h3 style="color: #ff4757; margin-bottom: 10px;">
+                        🚨 CRITICAL HOTSPOT
+                    </h3>
+                    <h4>${hotspot.location}</h4>
+                    <div style="margin: 15px 0; background: #ffebee; padding: 15px; border-radius: 8px;">
+                        <strong>⚠️ URGENT ACTION NEEDED</strong><br>
+                        Severity: ${hotspot.severity}%<br>
+                        Reports: ${hotspot.reports}<br>
+                        Estimated: ${Math.round(hotspot.reports * 2.5)}kg waste
+                    </div>
+                    <div style="background: #fff3e0; padding: 10px; border-radius: 8px;">
+                        <strong>🌍 Environmental Risk:</strong><br>
+                        ${(hotspot.reports * 0.2).toFixed(1)}kg CO₂ released daily if not cleared
+                    </div>
+                </div>
+            `;
+        }
+
+        function clearLayers() {
+            if (heatmapLayer) map.removeLayer(heatmapLayer);
+            if (pinLayer) map.removeLayer(pinLayer);
+        }
+
+        function addHeatmapPopups() {
+            // Add invisible markers for popup functionality on heatmap
+            wasteHotspots.forEach(hotspot => {
+                const marker = L.circleMarker([hotspot.lat, hotspot.lng], {
+                    radius: 1,
+                    opacity: 0,
+                    fillOpacity: 0
+                }).addTo(map);
+                
+                marker.bindPopup(createPopupContent(hotspot));
+            });
+        }
+
+        function updateHotspotsList() {
+            const sortedHotspots = [...wasteHotspots]
+                .sort((a, b) => b.severity - a.severity)
+                .slice(0, 6);
+
+            const listContainer = document.getElementById('hotspotsList');
+            listContainer.innerHTML = '';
+
+            sortedHotspots.forEach(hotspot => {
+                const severityClass = 
+                    hotspot.severity >= 90 ? 'critical' :
+                    hotspot.severity >= 70 ? 'high' :
+                    hotspot.severity >= 50 ? 'medium' : 'low';
+
+                const item = document.createElement('div');
+                item.className = `hotspot-item hotspot-${severityClass}`;
+                item.onclick = () => focusOnHotspot(hotspot);
+                
+                item.innerHTML = `
+                    <div class="hotspot-title">${hotspot.location}</div>
+                    <div class="hotspot-details">
+                        Severity: ${hotspot.severity}% • ${hotspot.reports} reports<br>
+                        Type: ${hotspot.type}
+                    </div>
+                `;
+                
+                listContainer.appendChild(item);
+            });
+        }
+
+        function updateStats() {
+            const critical = wasteHotspots.filter(h => h.severity >= 85).length;
+            document.getElementById('totalHotspots').textContent = wasteHotspots.length;
+            document.getElementById('criticalCount').textContent = critical;
+            document.getElementById('visibleHotspots').textContent = `${wasteHotspots.length} visible`;
+        }
+
+        function focusOnHotspot(hotspot) {
+            map.setView([hotspot.lat, hotspot.lng], 15);
+            
+            // Highlight effect
+            const popup = L.popup()
+                .setLatLng([hotspot.lat, hotspot.lng])
+                .setContent(createPopupContent(hotspot))
+                .openOn(map);
+        }
+
+        function refreshData() {
+            showLoading("Refreshing waste data...");
+            
+            setTimeout(() => {
+                // Simulate slight changes in severity
+                wasteHotspots.forEach(hotspot => {
+                    hotspot.severity += Math.random() * 10 - 5; // ±5% change
+                    hotspot.severity = Math.max(0, Math.min(100, hotspot.severity));
+                    hotspot.reports += Math.floor(Math.random() * 3); // Add 0-2 reports
+                });
+                
+                if (currentView === 'heatmap') showHeatmap();
+                else if (currentView === 'pins') showPins();
+                else if (currentView === 'critical') showCriticalOnly();
+                
+                updateHotspotsList();
+                updateStats();
+                updateLastUpdateTime();
+                hideLoading();
+                
+                showNotification("📊 Data refreshed! New waste reports detected.");
+            }, 2000);
+        }
+
+        function simulateNewHotspot() {
+            showLoading("AI detecting new hotspot...");
+            
+            setTimeout(() => {
+                // Add new random hotspot near Nairobi
+                const newHotspot = {
+                    lat: -1.2921 + (Math.random() - 0.5) * 0.1,
+                    lng: 36.8219 + (Math.random() - 0.5) * 0.1,
+                    severity: 75 + Math.random() * 20,
+                    location: `New Area ${wasteHotspots.length + 1}`,
+                    reports: Math.floor(Math.random() * 20) + 10,
+                    type: "Newly Detected"
+                };
+                
+                wasteHotspots.push(newHotspot);
+                
+                if (currentView === 'heatmap') showHeatmap();
+                else if (currentView === 'pins') showPins();
+                
+                updateHotspotsList();
+                updateStats();
+                updateLastUpdateTime();
+                hideLoading();
+                
+                // Focus on new hotspot
+                map.setView([newHotspot.lat, newHotspot.lng], 14);
+                
+                showNotification(`🚨 NEW HOTSPOT DETECTED: ${newHotspot.location} (${Math.round(newHotspot.severity)}% severity)`);
+            }, 3000);
+        }
+
+        function centerOnNairobi() {
+            map.setView([-1.2921, 36.8219], 12);
+        }
+
+        function testHeatmap() {
+            showLoading("Testing heatmap functionality...");
+            
+            setTimeout(() => {
+                // Clear any existing layers
+                clearLayers();
+                
+                // Create a simple test heatmap with high contrast
+                const testData = [
+                    [-1.2921, 36.8219, 1.0],   // Nairobi center - critical (red)
+                    [-1.3028, 36.8007, 0.8],   // High severity
+                    [-1.2833, 36.8167, 0.6],   // Medium severity
+                    [-1.2745, 36.8062, 0.4],   // Low-medium
+                    [-1.3167, 36.8833, 0.2],   // Low severity
+                ];
+                
+                try {
+                    heatmapLayer = L.heatLayer(testData, {
+                        radius: 60,
+                        blur: 40,
+                        minOpacity: 0.6,
+                        maxIntensity: 1.0,
+                        gradient: {
+                            0.0: '#00ff00',    // Bright green
+                            0.2: '#ffff00',    // Yellow
+                            0.4: '#ffa500',    // Orange
+                            0.6: '#ff4500',    // Red-orange
+                            0.8: '#ff0000',    // Red
+                            1.0: '#8b0000'     // Dark red
+                        }
+                    }).addTo(map);
+                    
+                    currentView = 'heatmap';
+                    document.getElementById('currentView').textContent = 'Test Heatmap';
+                    document.getElementById('visibleHotspots').textContent = '5 test points';
+                    
+                    hideLoading();
+                    showNotification("🧪 Test heatmap created! You should see colored areas now.");
+                    
+                } catch (error) {
+                    console.error('Test heatmap error:', error);
+                    hideLoading();
+                    showNotification("❌ Heatmap test failed. Check console for errors.");
+                }
+            }, 2000);
+        }
+
+        function showLoading(message) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.querySelector('div:nth-child(2)').textContent = message;
+            overlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('lastUpdate').textContent = timeString;
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: linear-gradient(135deg, #00b894, #00a085);
+                color: white;
+                padding: 20px 25px;
+                border-radius: 15px;
+                font-weight: bold;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 2000;
+                max-width: 300px;
+                animation: slideInRight 0.5s ease-out;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.5s ease-in';
+                setTimeout(() => notification.remove(), 500);
+            }, 4000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try to load real data first, fallback to demo data
+            fetch('waste_hotspots_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing mock data
+                    wasteHotspots.length = 0;
+                    
+                    // Map JSON data to our format
+                    if (data.waste_hotspots) {
+                        data.waste_hotspots.forEach(spot => {
+                            wasteHotspots.push({
+                                lat: spot.latitude,
+                                lng: spot.longitude,
+                                severity: spot.base_severity * 10, // Convert 1-10 scale to percentage
+                                location: spot.name,
+                                reports: spot.typical_reports ? spot.typical_reports.length : 0,
+                                type: spot.waste_type.charAt(0).toUpperCase() + spot.waste_type.slice(1),
+                                description: spot.description
+                            });
+                        });
+                    }
+                    
+                    // Add geofence areas if available
+                    if (data.geofence_areas) {
+                        data.geofence_areas.forEach(area => {
+                            L.circle([area.lat, area.lng], {
+                                radius: area.radius_km * 1000,
+                                color: area.sensitivity === 'critical' ? '#ff4757' : '#2ed573',
+                                fillColor: area.sensitivity === 'critical' ? '#ff4757' : '#2ed573',
+                                fillOpacity: 0.1,
+                                weight: 2,
+                                dashArray: '5, 10'
+                            }).addTo(map)
+                            .bindPopup(`
+                                <div style="text-align: center;">
+                                    <h3>${area.name}</h3>
+                                    <p>Sensitivity: ${area.sensitivity.toUpperCase()}</p>
+                                    <p>Radius: ${area.radius_km}km</p>
+                                </div>
+                            `);
+                        });
+                    }
+                    
+                    // Update metadata if available
+                    if (data.metadata && data.metadata.last_updated) {
+                        document.getElementById('lastUpdate').textContent = 
+                            new Date(data.metadata.last_updated).toLocaleString();
+                    }
+                    
+                    showNotification("✅ Live waste management data loaded!");
+                })
+                .catch(error => {
+                    console.error('Error loading waste data:', error);
+                    showNotification("⚠️ Using demo data. Real data file not found.");
+                })
+                .finally(() => {
+                    // Initialize map regardless of data source
+                    setTimeout(initializeMap, 500);
+                    updateLastUpdateTime();
+                    
+                    // Update time every minute
+                    setInterval(updateLastUpdateTime, 60000);
+                });
+        });
+
+        // Add some demo interactivity
+        setTimeout(() => {
+            showNotification("🎯 Map loaded successfully! Try the controls on the left.");
+        }, 3000);
+
+        setTimeout(() => {
+            showNotification("💡 Pro tip: Click on any hotspot for detailed information!");
+        }, 8000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+{
+  "hotspots": [
+    {
+      "id": 1,
+      "name": "Downtown Area",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "severity": 85,
+      "type": "urban",
+      "description": "High population density area"
+    },
+    {
+      "id": 2,
+      "name": "Industrial Zone",
+      "latitude": 40.7282,
+      "longitude": -74.0776,
+      "severity": 92,
+      "type": "industrial",
+      "description": "Manufacturing and industrial activities"
+    },
+    {
+      "id": 3,
+      "name": "Residential District",
+      "latitude": 40.7505,
+      "longitude": -73.9934,
+      "severity": 65,
+      "type": "residential",
+      "description": "Medium density housing area"
+    },
+    {
+      "id": 4,
+      "name": "Commercial Center",
+      "latitude": 40.7589,
+      "longitude": -73.9851,
+      "severity": 78,
+      "type": "commercial",
+      "description": "Shopping and business district"
+    },
+    {
+      "id": 5,
+      "name": "Transport Hub",
+      "latitude": 40.6892,
+      "longitude": -74.0445,
+      "severity": 95,
+      "type": "transport",
+      "description": "Major transportation intersection"
+    },
+    {
+      "id": 6,
+      "name": "Park Area",
+      "latitude": 40.7829,
+      "longitude": -73.9654,
+      "severity": 45,
+      "type": "recreational",
+      "description": "Public park and green space"
+    },
+    {
+      "id": 7,
+      "name": "University Campus",
+      "latitude": 40.8075,
+      "longitude": -73.9626,
+      "severity": 70,
+      "type": "educational",
+      "description": "University campus area"
+    },
+    {
+      "id": 8,
+      "name": "Hospital Zone",
+      "latitude": 40.7414,
+      "longitude": -73.9903,
+      "severity": 88,
+      "type": "medical",
+      "description": "Medical facility cluster"
+    },
+    {
+      "id": 9,
+      "name": "Suburban Area",
+      "latitude": 40.6782,
+      "longitude": -73.9442,
+      "severity": 55,
+      "type": "residential",
+      "description": "Low density suburban area"
+    },
+    {
+      "id": 10,
+      "name": "Waterfront",
+      "latitude": 40.7021,
+      "longitude": -74.0127,
+      "severity": 60,
+      "type": "coastal",
+      "description": "Waterfront development area"
+    }
+  ]
+}

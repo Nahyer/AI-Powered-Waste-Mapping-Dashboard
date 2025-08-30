@@ -1,0 +1,341 @@
+python waste_hotspots.pypython waste_hotspots.py{
+  "waste_hotspots": [
+    {
+      "name": "City Market",
+      "latitude": -1.2921,
+      "longitude": 36.8219,
+      "base_severity": 8,
+      "waste_type": "organic",      // Add this inside your existing <script> tag, replace the empty wasteHotspots array
+      const wasteHotspots = [
+          // Data will be loaded from JSON
+      ];
+      
+      // Add these new functions after your existing script functions
+      async function loadWasteData() {
+          try {
+              const response = await fetch('waste_hotspots_data.json');
+              const data = await response.json();
+              
+              // Map the JSON data to our required format
+              const mappedHotspots = data.waste_hotspots.map(spot => ({
+                  lat: spot.latitude,
+                  lng: spot.longitude,
+                  severity: spot.base_severity,
+                  location: spot.name,
+                  type: spot.waste_type,
+                  description: spot.description,
+                  reports: spot.typical_reports
+              }));
+      
+              // Update wasteHotspots array
+              wasteHotspots.length = 0;
+              wasteHotspots.push(...mappedHotspots);
+      
+              // Initialize map with the data
+              initializeMap();
+              updateHotspotsList();
+              updateStats();
+              
+              showNotification("✅ Waste hotspot data loaded successfully!");
+          } catch (error) {
+              console.error('Error loading waste data:', error);
+              showNotification("❌ Error loading data");
+          }
+      }
+      
+      // Update the DOMContentLoaded event listener
+      document.addEventListener('DOMContentLoaded', function() {
+          loadWasteData();
+          setInterval(updateLastUpdateTime, 60000);
+      });
+      
+      // Update the showHeatmap function
+      function showHeatmap() {
+          clearLayers();
+          const heatData = wasteHotspots.map(spot => [
+              spot.lat,
+              spot.lng,
+              spot.severity / 10 // Normalize severity for heatmap
+          ]);
+          
+          heatmapLayer = L.heatLayer(heatData, {
+              radius: 25,
+              blur: 15,
+              maxZoom: 15,
+              gradient: {
+                  0.4: '#fee08b',
+                  0.6: '#fdae61',
+                  0.8: '#f46d43',
+                  1.0: '#d73027'
+              }
+          }).addTo(map);
+          
+          currentView = 'heatmap';
+          addHeatmapPopups();
+      }
+      
+      // Add this to your HTML sidebar div
+      ````html
+      // filepath: c:\Users\Hp\agent 1\index.html
+      <div class="sidebar">
+          <h1>WasteWise Dashboard</h1>
+          
+          <div class="controls">
+              <div class="control-group">
+                  <label class="control-label">View Mode</label>
+                  <button class="btn" onclick="showHeatmap()">Heatmap View</button>
+                  <button class="btn btn-secondary" onclick="showPins()">Pin View</button>
+              </div>
+              
+              <div class="control-group">
+                  <label class="control-label">Filters</label>
+                  <button class="btn btn-danger" onclick="showCriticalOnly()">Show Critical Only</button>
+                  <button class="btn" onclick="centerOnNairobi()">Center Map</button>
+              </div>
+          </div>
+          
+          <div class="stats-grid">
+              <div class="stat-card">
+                  <div class="stat-number" id="total-hotspots">0</div>
+                  <div class="stat-label">Total Hotspots</div>
+              </div>
+              <div class="stat-card">
+                  <div class="stat-number" id="critical-count">0</div>
+                  <div class="stat-label">Critical Areas</div>
+              </div>
+          </div>
+          
+          <div class="hotspot-list" id="hotspot-list">
+              <!-- Hotspots will be populated here -->
+          </div>
+      </div>
+      "description": "Market waste accumulation",
+      "typical_reports": [
+        "Food waste accumulation",
+        "Rotting organic matter", 
+        "Market waste overflow",
+        "Compostable waste pile"
+      ]
+    },
+    {
+      "name": "Gikomba Market",
+      "latitude": -1.2833,
+      "longitude": 36.8233,
+      "base_severity": 9,
+      "waste_type": "mixed",
+      "description": "Massive textile and general waste",
+      "typical_reports": [
+        "General waste overflow",
+        "Mixed garbage pile",
+        "Unsegregated waste dumping",
+        "Municipal waste accumulation"
+      ]
+    },
+    {
+      "name": "Westlands Market",
+      "latitude": -1.3000,
+      "longitude": 36.8236,
+      "base_severity": 7,
+      "waste_type": "organic",
+      "description": "Food waste and packaging",
+      "typical_reports": [
+        "Food waste accumulation",
+        "Packaging waste",
+        "Market waste overflow",
+        "Compostable waste pile"
+      ]
+    },
+    {
+      "name": "Kawangware",
+      "latitude": -1.3056,
+      "longitude": 36.8139,
+      "base_severity": 8,
+      "waste_type": "mixed",
+      "description": "Overflowing residential dumpsters",
+      "typical_reports": [
+        "General waste overflow",
+        "Mixed garbage pile",
+        "Residential waste accumulation",
+        "Overflowing dumpsters"
+      ]
+    },
+    {
+      "name": "Kibera",
+      "latitude": -1.3181,
+      "longitude": 36.8300,
+      "base_severity": 9,
+      "waste_type": "mixed",
+      "description": "Critical waste management crisis",
+      "typical_reports": [
+        "General waste overflow",
+        "Mixed garbage pile",
+        "Critical waste accumulation",
+        "Emergency waste situation"
+      ]
+    },
+    {
+      "name": "Eastleigh",
+      "latitude": -1.2750,
+      "longitude": 36.8417,
+      "base_severity": 7,
+      "waste_type": "plastic",
+      "description": "Plastic waste accumulation",
+      "typical_reports": [
+        "Plastic bottle accumulation",
+        "Packaging waste", 
+        "Single-use plastic pollution",
+        "Plastic bag dumping"
+      ]
+    },
+    {
+      "name": "Industrial Area",
+      "latitude": -1.2800,
+      "longitude": 36.8100,
+      "base_severity": 8,
+      "waste_type": "hazardous",
+      "description": "Industrial waste dumping",
+      "typical_reports": [
+        "Chemical waste spill",
+        "Hazardous material dumping",
+        "Toxic waste accumulation",
+        "Industrial byproduct disposal"
+      ]
+    },
+    {
+      "name": "Athi River",
+      "latitude": -1.2650,
+      "longitude": 36.8050,
+      "base_severity": 6,
+      "waste_type": "construction",
+      "description": "Construction debris",
+      "typical_reports": [
+        "Construction debris",
+        "Building material waste",
+        "Demolition waste pile",
+        "Rubber and concrete dumping"
+      ]
+    },
+    {
+      "name": "Nairobi River",
+      "latitude": -1.2950,
+      "longitude": 36.8250,
+      "base_severity": 9,
+      "waste_type": "mixed",
+      "description": "River pollution - critical",
+      "typical_reports": [
+        "River pollution waste",
+        "Waterway contamination",
+        "Critical environmental hazard",
+        "Mixed waste in river"
+      ]
+    },
+    {
+      "name": "Mathare River",
+      "latitude": -1.3100,
+      "longitude": 36.8350,
+      "base_severity": 8,
+      "waste_type": "plastic",
+      "description": "Plastic waste in waterways",
+      "typical_reports": [
+        "Plastic bottle accumulation",
+        "Packaging waste in water",
+        "Single-use plastic pollution",
+        "Plastic bag dumping in river"
+      ]
+    },
+    {
+      "name": "CBD Streets",
+      "latitude": -1.2856,
+      "longitude": 36.8167,
+      "base_severity": 7,
+      "waste_type": "plastic",
+      "description": "Street litter and packaging",
+      "typical_reports": [
+        "Street litter accumulation",
+        "Packaging waste on streets",
+        "Public area waste",
+        "Urban street pollution"
+      ]
+    },
+    {
+      "name": "Upper Hill",
+      "latitude": -1.2989,
+      "longitude": 36.8189,
+      "base_severity": 6,
+      "waste_type": "electronic",
+      "description": "E-waste from offices",
+      "typical_reports": [
+        "E-waste dumping",
+        "Electronic equipment disposal",
+        "Battery waste accumulation",
+        "Circuit board waste"
+      ]
+    },
+    {
+      "name": "JKIA Area",
+      "latitude": -1.3194,
+      "longitude": 36.9278,
+      "base_severity": 5,
+      "waste_type": "mixed",
+      "description": "Airport waste management",
+      "typical_reports": [
+        "Airport waste accumulation",
+        "Travel-related waste",
+        "Mixed garbage near airport",
+        "Transport hub waste"
+      ]
+    },
+    {
+      "name": "Bus Stations",
+      "latitude": -1.3036,
+      "longitude": 36.8211,
+      "base_severity": 7,
+      "waste_type": "mixed",
+      "description": "Public transport waste",
+      "typical_reports": [
+        "Public transport waste",
+        "Bus station litter",
+        "Commuter waste accumulation",
+        "Transport hub pollution"
+      ]
+    }
+  ],
+  "geofence_areas": [
+    {
+      "name": "City Center",
+      "lat": -1.2921,
+      "lng": 36.8219,
+      "radius_km": 2.0,
+      "sensitivity": "high"
+    },
+    {
+      "name": "Residential Area",
+      "lat": -1.3000,
+      "lng": 36.8300,
+      "radius_km": 1.5,
+      "sensitivity": "medium"
+    },
+    {
+      "name": "Industrial Zone",
+      "lat": -1.2800,
+      "lng": 36.8100,
+      "radius_km": 3.0,
+      "sensitivity": "high"
+    },
+    {
+      "name": "River Area",
+      "lat": -1.2950,
+      "lng": 36.8250,
+      "radius_km": 1.0,
+      "sensitivity": "critical"
+    }
+  ],
+  "metadata": {
+    "total_hotspots": 14,
+    "data_source": "Nairobi Waste Management Analysis 2024",
+    "coverage_area": "Nairobi Metropolitan",
+    "coordinate_system": "WGS84",
+    "severity_scale": "1-10 (10 = most severe)",
+    "last_updated": "2024-01-15T10:00:00Z"
+  }
+}
