@@ -108,8 +108,6 @@ Acceptance criteria
 Change log
 ----------
 - 2025-08-30: Initial file created.
-- 2025-08-30: Agent 4 (Route Optimization) implemented with nearest-neighbor + 2-opt algorithms.
-- 2025-08-30: Agent 2 (AI/ML Clustering) implemented with DBSCAN and K-Means algorithms.
 
 Notes
 -----
