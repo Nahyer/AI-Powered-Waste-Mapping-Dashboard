@@ -1,1 +1,38 @@
 @import "tailwindcss";
+
+/* Fix z-index issues with Leaflet maps */
+.leaflet-container {
+  z-index: 1 !important;
+}
+
+.leaflet-control-container {
+  z-index: 1000 !important;
+}
+
+.leaflet-popup {
+  z-index: 1001 !important;
+}
+
+/* Ensure modals are always on top */
+.modal-backdrop {
+  z-index: 9999 !important;
+}
+
+.modal-content {
+  z-index: 10000 !important;
+}
+
+/* Custom slider styling */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #2563eb;
+}

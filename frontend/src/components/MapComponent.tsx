@@ -79,12 +79,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
   };
 
   return (
-    <div className={`w-full h-full min-h-[500px] rounded-lg overflow-hidden shadow-lg ${isAddingMode ? 'cursor-crosshair' : ''}`}>
+    <div className={`w-full h-full min-h-[500px] rounded-lg overflow-hidden shadow-lg ${isAddingMode ? 'cursor-crosshair' : ''}`} style={{ zIndex: 1 }}>
       <MapContainer
         center={center}
         zoom={zoom}
         className={`h-full w-full ${isAddingMode ? 'cursor-crosshair' : ''}`}
-        style={{ minHeight: '500px' }}
+        style={{ minHeight: '500px', zIndex: 1 }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

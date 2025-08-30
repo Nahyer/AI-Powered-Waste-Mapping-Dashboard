@@ -18,9 +18,20 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
     severity: 5,
     description: '',
     wasteType: 'general',
-    reporterName: '',
-    reporterEmail: ''
+    reporterName: 'Anonymous',
+    reporterEmail: 'anonymous@example.com'
   });
+
+  // Update form data when defaultLocation changes
+  React.useEffect(() => {
+    if (defaultLocation) {
+      setFormData(prev => ({
+        ...prev,
+        lat: defaultLocation.lat,
+        lng: defaultLocation.lng
+      }));
+    }
+  }, [defaultLocation]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -47,17 +58,8 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
     if (!formData.severity || formData.severity < 1 || formData.severity > 10) {
       newErrors.severity = 'Severity must be between 1 and 10';
     }
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-    if (!formData.reporterName.trim()) {
-      newErrors.reporterName = 'Reporter name is required';
-    }
-    if (!formData.reporterEmail.trim()) {
-      newErrors.reporterEmail = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.reporterEmail)) {
-      newErrors.reporterEmail = 'Please enter a valid email address';
-    }
+    // Make description optional - it's not required by the backend
+    // Make reporter info optional - we provide defaults
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -70,14 +72,14 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Pass the hotspot data that matches the backend API
       onSubmit({
         lat: formData.lat,
         lng: formData.lng,
         severity: formData.severity
       });
+    } catch (error) {
+      console.error('Error submitting hotspot:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -99,14 +101,16 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 modal-backdrop" style={{ zIndex: 9999 }}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content" style={{ zIndex: 10000 }}>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Report New Waste Hotspot</h2>
             <button
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              title="Close form"
+              aria-label="Close hotspot submission form"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -174,6 +178,8 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
                       value={formData.severity}
                       onChange={(e) => handleInputChange('severity', parseInt(e.target.value))}
                       className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      title="Severity Level Slider"
+                      aria-label="Severity level from 1 to 10"
                     />
                     <span className={`font-bold text-lg ${getSeverityColor(formData.severity)}`}>
                       {formData.severity}
@@ -195,6 +201,8 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
                     value={formData.wasteType}
                     onChange={(e) => handleInputChange('wasteType', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    title="Waste Type Selection"
+                    aria-label="Select waste type"
                   >
                     {wasteTypes.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -206,7 +214,7 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description *
+                    Description
                   </label>
                   <textarea
                     value={formData.description}
@@ -215,7 +223,7 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
                     className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.description ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="Describe the waste accumulation, approximate size, and any relevant details..."
+                    placeholder="Describe the waste accumulation, approximate size, and any relevant details... (optional)"
                   />
                   {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
                 </div>
@@ -224,11 +232,11 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
 
             {/* Reporter Information Section */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Reporter Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Reporter Information (Optional)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Name *
+                    Your Name
                   </label>
                   <input
                     type="text"
@@ -237,13 +245,13 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
                     className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.reporterName ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="John Doe"
+                    placeholder="Anonymous (default)"
                   />
                   {errors.reporterName && <p className="mt-1 text-sm text-red-600">{errors.reporterName}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address *
+                    Email Address
                   </label>
                   <input
                     type="email"
@@ -252,11 +260,14 @@ const HotspotSubmissionForm: React.FC<HotspotSubmissionFormProps> = ({
                     className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.reporterEmail ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="john@example.com"
+                    placeholder="anonymous@example.com (default)"
                   />
                   {errors.reporterEmail && <p className="mt-1 text-sm text-red-600">{errors.reporterEmail}</p>}
                 </div>
               </div>
+              <p className="mt-2 text-sm text-gray-600">
+                💡 Reporter information is optional and defaults to "Anonymous" if not provided
+              </p>
             </div>
 
             {/* Action Buttons */}
